@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Аім Тренажер - Інтекс стиль</title>
+<style>
+  body {
+    margin: 0;
+    background: linear-gradient(135deg, #141e30, #243b55);
+    overflow: hidden;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #eee;
+    user-select: none;
+  }
+  h1 {
+    text-align: center;
+    margin: 15px 0;
+  }
+  #controls {
+    text-align: center;
+    margin-bottom: 10px;
+  }
+  button {
+    margin: 5px;
+    background-color: #1e90ff;
+    border: none;
+    color: white;
+    padding: 10px 15px;
+    font-size: 16px;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: background-color 0.3s;
+  }
+  button:hover {
+    background-color: #63b3ff;
+  }
+  #gameArea {
+    position: relative;
+    width: 100vw;
+    height: 80vh;
+    border: 2px solid #63b3ff;
+    margin: 0 auto;
+    max-width: 1200px;
+    background: #0a192f;
+  }
+  .cube {
+    position: absolute;
+    background-color: #ff6347;
+    border-radius: 8px;
+    cursor: pointer;
+    box-shadow: 0 0 8px #ff6347;
+    user-select: none;
+  }
+  #score {
+    text-align: center;
+    font-size: 18px;
+    margin-top: 10px;
+  }
+</style>
+</head>
+<body>
+<h1>Аім Тренажер — ходячі кубики</h1>
+
+<div id="controls">
+  <button id="speedDown">Зменшити швидкість</button>
+  <button id="speedUp">Збільшити швидкість</button>
+  <button id="sizeDown">Зменшити розмір</button>
+  <button id="sizeUp">Збільшити розмір</button>
+</div>
+
+<div id="gameArea"></div>
+
+<div id="score">Попадань: 0</div>
+
+<script>
+  const gameArea = document.getElementById('gameArea');
+  const speedDownBtn = document.getElementById('speedDown');
+  const speedUpBtn = document.getElementById('speedUp');
+  const sizeDownBtn = document.getElementById('sizeDown');
+  const sizeUpBtn = document.getElementById('sizeUp');
+  const scoreDisplay = document.getElementById('score');
+
+  let score = 0;
+  let cubesCount = 5;
+  let cubeSize = 50; // px
+  let cubeSpeed = 2; // px per frame
+
+  // Масив кубиків
+  const cubes = [];
+
+  // Створюємо кубик
+  function createCube() {
+    const cube = document.createElement('div');
+    cube.classList.add('cube');
+    cube.style.width = cube.style.height = cubeSize + 'px';
+
+    // Початкова позиція - випадкова у межах gameArea
+    cube.x = Math.random() * (gameArea.clientWidth - cubeSize);
+    cube.y = Math.random() * (gameArea.clientHeight - cubeSize);
+
+    // Напрям руху - випадковий вектор нормалізований
+    let angle = Math.random() * 2 * Math.PI;
+    cube.vx = Math.cos(angle) * cubeSpeed;
+    cube.vy = Math.sin(angle) * cubeSpeed;
+
+    // Застосовуємо позицію
+    cube.style.left = cube.x + 'px';
+    cube.style.top = cube.y + 'px';
+
+    // Обробник кліку по кубику
+    cube.addEventListener('click', () => {
+      score++;
+      scoreDisplay.textContent = `Попадань: ${score}`;
+      // Кубик миттєво змінює позицію
+      cube.x = Math.random() * (gameArea.clientWidth - cubeSize);
+      cube.y = Math.random() * (gameArea.clientHeight - cubeSize);
+      cube.style.left = cube.x + 'px';
+      cube.style.top = cube.y + 'px';
+    });
+
+    gameArea.appendChild(cube);
+    return cube;
+  }
+
+  // Ініціалізація кубиків
+  for (let i = 0; i < cubesCount; i++) {
+    cubes.push(createCube());
+  }
+
+  // Функція оновлення позицій кубиків
+  function update() {
+    for (let cube of cubes) {
+      cube.x += cube.vx;
+      cube.y += cube.vy;
+
+      // Відбивання від стінок
+      if (cube.x <= 0 || cube.x >= gameArea.clientWidth - cubeSize) cube.vx = -cube.vx;
+      if (cube.y <= 0 || cube.y >= gameArea.clientHeight - cubeSize) cube.vy = -cube.vy;
+
+      // Оновлення стилів
+      cube.style.left = cube.x + 'px';
+      cube.style.top = cube.y + 'px';
+    }
+    requestAnimationFrame(update);
+  }
+
+  update();
+
+  // Кнопки для керування швидкістю
+  speedUpBtn.addEventListener('click', () => {
+    cubeSpeed += 0.5;
+    updateSpeed();
+  });
+  speedDownBtn.addEventListener('click', () => {
+    cubeSpeed = Math.max(0.5, cubeSpeed - 0.5);
+    updateSpeed();
+  });
+
+  function updateSpeed() {
+    for (let cube of cubes) {
+      // зберігаємо напрямок, змінюємо швидкість зберігаючи напрям
+      let angle = Math.atan2(cube.vy, cube.vx);
+      cube.vx = Math.cos(angle) * cubeSpeed;
+      cube.vy = Math.sin(angle) * cubeSpeed;
+    }
+  }
+
+  // Кнопки для керування розміром
+  sizeUpBtn.addEventListener('click', () => {
+    cubeSize = Math.min(150, cubeSize + 5);
+    updateSize();
+  });
+  sizeDownBtn.addEventListener('click', () => {
+    cubeSize = Math.max(20, cubeSize - 5);
+    updateSize();
+  });
+
+  function updateSize() {
+    for (let cube of cubes) {
+      cube.style.width = cube.style.height = cubeSize + 'px';
+
+      // Якщо кубик вийшов за межі після зміни розміру - поправляємо позицію
+      if (cube.x > gameArea.clientWidth - cubeSize) cube.x = gameArea.clientWidth - cubeSize;
+      if (cube.y > gameArea.clientHeight - cubeSize) cube.y = gameArea.clientHeight - cubeSize;
+
+      cube.style.left = cube.x + 'px';
+      cube.style.top = cube.y + 'px';
+    }
+  }
+</script>
+</body>
+</html>
